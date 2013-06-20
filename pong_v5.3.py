@@ -123,18 +123,19 @@ def calCC(a, b, v):
 		if ydiff > 0 and xdiff > 0:
 			### 4rd
 			angle = theta
-		elif ydiff > 0 and xdiff < 0:
-			### 3rd
-			angle = math.pi - theta		
 		elif ydiff < 0 and xdiff > 0:
 			### 1st 
 			angle = -theta
+		elif ydiff > 0 and xdiff < 0:
+			### 3rd
+			angle = math.pi - theta
 		elif ydiff < 0 and xdiff < 0:
-			angle = math.pi + theta
+			### 2nd
+			angle = -math.pi + theta
+
 
 #	print "a({0:d},{1:d})_b({2:d},{3:d})_deg({4:5.2f})".format( ax, ay, bx, by, math.degrees(angle) )
 	return angle
-
 
 	
 
@@ -201,6 +202,13 @@ class Ball(sprite.Sprite):
 					angle = calCC( self,p, v )
 					if self.istatic:
 						v = p.getMove()
+						if v == (0,0):
+							ax,ay = self.rect.center
+							bx,by = p.rect.center
+							r = self.radius + p.radius - math.sqrt( (ax-bx)**2 + (ay-by)**2  )
+							v = ( r*math.cos(angle), r*math.sin(angle) )
+							#v = [ math.ceil(x) for x in v if abs(x) < 1 ]
+							v = [ math.ceil(x) if abs(x) <1 else x for x in v ]
 					
 		self.rect = newpos
 		self.vector = ( angle,v )
@@ -272,7 +280,7 @@ def main():
 
 	
 	### auxiliary line
-	nblock = 4
+	nblock = width/30
 	for i in range(1,nblock):
 		pygame.draw.line( bgimg, (55, 55, 55), (0, height*i/nblock), (width, height*i/nblock), 2 )
 		pygame.draw.line( bgimg, (55, 55, 55), (width*i/nblock, 0), (width*i/nblock, height), 2 )
