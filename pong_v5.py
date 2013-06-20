@@ -96,16 +96,17 @@ def detectCC(a, b):
 	ax,ay = a.rect.center
 	bx,by = b.rect.center
 	#return a.rect.colliderect(b.rect)
-	return [ True if  math.sqrt ( ((ax - bx )**2) + ((ay - by)**2) ) <= ( a.radius+b.radius ) else False ][0]
+	return [ True if  math.sqrt ( ((ax - bx )**2) + ((ay - by)**2) ) < ( a.radius+b.radius ) else False ][0]
 
 ### calclulate collision of circles
 ### a, b are Surface objects
 def calCC(a, b, v):
+	### a: ball, b: player
 	ax,ay = a.rect.center
 	bx,by = b.rect.center
 	
-	xdiff = -(ax-bx)
-	ydiff = -(ay-by)
+	xdiff = (ax-bx)
+	ydiff = (ay-by)
 
 	if ydiff == 0:
 		if xdiff > 0:
@@ -118,17 +119,20 @@ def calCC(a, b, v):
 		else:
 			angle = math.pi*0.5
 	else:
-		theta = math.atan(abs(ydiff/xdiff))
-		if ydiff > 0 and ydiff > 0:
-			angle = math.pi + theta
-		elif ydiff > 0 and ydiff < 0:
-			angle = -theta		
-		elif ydiff < 0 and xdiff > 0:
-			angle = math.pi - theta
-		elif ydiff < 0 and xdiff < 0:
+		theta = math.atan(abs(float(ydiff)/float(xdiff)))
+		if ydiff > 0 and xdiff > 0:
+			### 4rd
 			angle = theta
+		elif ydiff > 0 and xdiff < 0:
+			### 3rd
+			angle = math.pi - theta		
+		elif ydiff < 0 and xdiff > 0:
+			### 1st 
+			angle = -theta
+		elif ydiff < 0 and xdiff < 0:
+			angle = math.pi + theta
 
-	#print "a({0:d},{1:d})_b({2:d},{3:d})_v{4:3.1f}_deg({5:5.2f})".format( ax, ay, bx, by, v, math.degrees(angle) )
+#	print "a({0:d},{1:d})_b({2:d},{3:d})_deg({4:5.2f})".format( ax, ay, bx, by, math.degrees(angle) )
 	return angle
 
 
@@ -147,6 +151,8 @@ class Ball(sprite.Sprite):
 		self.rect.topleft = map(int, xy)
 		self.lasthit = None
 		self.numshit = 0
+		self.lasthitangle = None
+		self.istatic = True
 		
 	def update( self ):
 		newpos = self.calcNewpos( self.rect, self.vector )
@@ -176,7 +182,6 @@ class Ball(sprite.Sprite):
 
 				angle = math.pi - angle
 				x, y = self.rect.center
-
 				if math.degrees(angle) >= 360.:
 					angle -= math.pi*2
 				elif math.degrees(angle) < -360.:
@@ -185,22 +190,27 @@ class Ball(sprite.Sprite):
 				#print 'left/right, ({4:d},{5:d}),({3:6.2f}->{0:6.2f}), ({1:5.2f},{2:5.2f})'.format( 
 				#	math.degrees(angle), v*math.cos(angle), v*math.sin(angle), math.degrees(angle0), x, y )
 		else:
+
 			for p in playergroup:
+
+				if self.istatic:
+					v = 0
+
 				if detectCC( self,p ):
 					self.lasthit = p
 					angle = calCC( self,p, v )
-					v = p.getMove()
-				else:
-					v = (0,0)
+					if self.istatic:
+						v = p.getMove()
 					
 		self.rect = newpos
 		self.vector = ( angle,v )
 
 	def calcNewpos( self, rect, vector ):
 		( angle,v ) = vector
-
-		if not isinstance(v, int):
-			return rect.move( v )
+		if self.istatic:
+			if v is 0:
+				v = (0,0)
+			return rect.move(v)
 		else:
 			return rect.move( v*math.cos(angle),v*math.sin(angle) )
 
@@ -208,7 +218,6 @@ class Ball(sprite.Sprite):
 		self.rect.topleft = map(int, self.origin)
 		self.vector = self.vector_o
 		self.lasthit = None
-
 
 
 class Bat(sprite.Sprite):
