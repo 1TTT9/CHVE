@@ -5,6 +5,9 @@ import pygame
 from pygame import sprite
 from pygame.locals import *
 
+import threading
+import urllib3
+
 """
 Tmeplate:
   This file is used as a template for pygame programing.
@@ -23,22 +26,25 @@ screen = pygame.display.set_mode((width, height))
 vpgroup = []
 
 
-"""
-[function name, usage, arguments]
-#screen.blit( source, dest, area=None );
-  usage:  
-    draw one image/(source surface) onto another
-  argument:
-    source - source surface
-    dest - dest can be either pairs of coordinates representing the upper left corner of the source or dest.
-    area - a small portion of source surface to draw
-#surface.convert()
-  usage:  
-    change the pixel format of an image with corresponding to the monitor. It help fasten the speed whenever SDL requires to do blit-action.
-#surface.convert_alpha()
-  usage:
-    change the pixel format of an image including pixel alpha. Basically speaking, it enable transparency of an image.
-"""	
+
+end_httpc_flag = False
+def runHTTPC():
+	global end_httpc_flag
+
+	http = urllib3.HTTPConnectionPool('127.0.0.1', port=7788)
+
+	t_start = time.time()
+	while not end_httpc_flag:
+		try:
+			r = http.request('GET', '/', headers={'connection':'keep-alive', 'user-agent':'ggcln/1.0'})
+			print r.headers
+		except:
+			print '[HTTPC]connect fail'
+			end_httpc_flag = True
+
+
+
+
 
 def drawDemo(bg):
 	font = pygame.font.Font(None, 36)
@@ -109,6 +115,11 @@ class VPlayer(sprite.Sprite):
 	
 
 def main():
+
+	### http client
+	thr = threading.Thread( target=runHTTPC )
+	thr.start()
+
 	### fill background
 	bg = pygame.Surface( screen.get_size() )
 	bg = bg.convert()
@@ -170,6 +181,8 @@ def main():
                 t_bc = time.time()
 		### detect mouse/keyboard event
 		if not isRunning():
+			global end_httpc_flag
+			end_httpc_flag = True
 			break
 
 		clock.tick(30)
@@ -177,7 +190,7 @@ def main():
                 for vp in vpgroup:
                         vp.move( vp.origin )
 
-                time.sleep(1./40)
+                time.sleep(1./30)
 
 		t_measure = [ 1/30. if clock.get_fps() < 30 else 1./clock.get_fps() ][0]
 
